@@ -4,6 +4,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { MaterialModule } from './material.module';
 
+// all services
+import { AudioService } from './services/audio.service';
+import { CloudService} from './services/cloud.service';
+
 @NgModule({
   declarations: [
     AppComponent
@@ -13,7 +17,10 @@ import { MaterialModule } from './material.module';
     BrowserAnimationsModule,
     MaterialModule
   ],
-  providers: [],
+  providers: [
+    AudioService,
+    CloudService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
