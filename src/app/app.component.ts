@@ -6,5 +6,19 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'auth0-audio-app';
+  files: Array<any> = [
+    { name: 'First Song', artist: 'Inder' },
+    { name: 'Second Song', artist: 'You' }
+  ];
+  state;
+  currentFile: any = {};
+
+  isFirstPlaying() {
+    return false;
+  }
+  isLastPlaying() {
+    return true;
+  }
 }
+
+
