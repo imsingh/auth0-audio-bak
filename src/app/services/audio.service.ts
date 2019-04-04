@@ -25,6 +25,10 @@ export class AudioService {
     );
   }
 
+  getState(): BehaviorSubject<any> {
+    return this.stateChange;
+  }
+
   play() {
     this.audioObj.play();
   }
