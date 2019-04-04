@@ -7,6 +7,7 @@ import { MaterialModule } from './material.module';
 // all services
 import { AudioService } from './services/audio.service';
 import { CloudService} from './services/cloud.service';
+import { AuthService } from './services/auth.service';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { CloudService} from './services/cloud.service';
   ],
   providers: [
     AudioService,
-    CloudService
+    CloudService,
+    AuthService
   ],
   bootstrap: [AppComponent]
 })
