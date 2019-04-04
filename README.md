@@ -1,4 +1,10 @@
-# Introduction
+# Running the prototype
+
+* `git clone` this repo.
+* `cd auth0-audio` and `npm install`
+* run `npm start`
+
+# Introduction (Outline)
 
 ## Prerequisites
 ### Install required tools
