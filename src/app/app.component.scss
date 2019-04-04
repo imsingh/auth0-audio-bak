@@ -1,4 +1,14 @@
 
+.main-toolbar {
+  .spacer {
+    flex: 1 1 auto;
+  }
+  .auth-btn {
+    font-size: 12px;
+    cursor: pointer;
+  }
+}
+
 .logo {
     margin: 2.5rem;
     text-align: center;

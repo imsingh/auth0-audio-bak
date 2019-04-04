@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AudioService } from './services/audio.service';
 import { CloudService } from './services/cloud.service';
+import { AuthService } from './services/auth.service';
 import { StreamState } from './interfaces/stream-state';
 
 @Component({
@@ -8,12 +9,13 @@ import { StreamState } from './interfaces/stream-state';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   files: Array<any> = [];
   state: StreamState;
   currentFile: any = {};
-  constructor(private audioService: AudioService, cloudService: CloudService) {
+  constructor(private audioService: AudioService, cloudService: CloudService, public auth: AuthService) {
     // handle authentication
+    auth.handleAuthentication();
 
     // get media files
     cloudService.getFiles().subscribe(files => {
@@ -25,6 +27,12 @@ export class AppComponent {
     .subscribe(state => {
       this.state = state;
     });
+  }
+
+  ngOnInit() {
+    if (this.auth.isAuthenticated()) {
+      this.auth.renewTokens();
+    }
   }
 
   playStream(url) {
