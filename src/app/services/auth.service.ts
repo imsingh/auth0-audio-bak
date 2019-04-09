@@ -1,86 +1,118 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
 import * as auth0 from 'auth0-js';
-
+import { environment } from '../../environments/environment';
+import { Observable, BehaviorSubject, bindNodeCallback, of } from 'rxjs';
+import { Router } from '@angular/router';
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private _idToken: string;
-  private _accessToken: string;
-  private _expiresAt: number;
-
   auth0 = new auth0.WebAuth({
-    clientID: 'fpgeZTWjHn8Yb5rC5FjmdfNl63yl5KK9',
-    domain: 'angular-auth0-app.eu.auth0.com',
+    clientID: environment.auth0.clientID,
+    domain: environment.auth0.domain,
     responseType: 'token id_token',
-    redirectUri: 'http://localhost:4200/',
-    scope: 'openid'
+    redirectUri: environment.auth0.redirectUri,
+    scope: 'openid profile email'
   });
 
-  constructor() {
-    this._idToken = '';
-    this._accessToken = '';
-    this._expiresAt = 0;
+  // Track whether or not to renew token
+  private _authFlag = 'isLoggedIn';
+  private _userProfileFlag = 'userProfile';
+
+  // Store authentication data
+  // Create stream for token
+  token$: Observable<string>;
+  // Create stream for user profile data
+  userProfile$ = new BehaviorSubject<any>(null);
+
+  // Authentication Navigation
+  onAuthSuccessUrl = '/';
+  onAuthFailureUrl = '/';
+  logoutUrl =  environment.auth0.logoutUrl;
+
+  // Create observable of Auth0 parseHash method to gather auth results
+  parseHash$ = bindNodeCallback(this.auth0.parseHash.bind(this.auth0));
+  // Create observable of Auth0 checkSession method to
+  // verify authorization server session and renew tokens
+  checkSession$ = bindNodeCallback(this.auth0.checkSession.bind(this.auth0));
+
+  constructor(private router: Router) {
+    const userProfile = localStorage.getItem(this._userProfileFlag);
+    if (userProfile) {
+      this.userProfile$.next(JSON.parse(userProfile));
+    }
   }
 
-  get accessToken(): string {
-    return this._accessToken;
+  login = () => this.auth0.authorize();
+
+  handleLoginCallback = () => {
+    if (window.location.hash && !this.authenticated) {
+      this.parseHash$().subscribe({
+        next: authResult => {
+          this._setAuth(authResult);
+          window.location.hash = '';
+          this.router.navigate([this.onAuthSuccessUrl]);
+        },
+        error: err => this._handleError(err)
+      });
+    }
   }
 
-  get idToken(): string {
-    return this._idToken;
+  private _setAuth = authResult => {
+    // Save authentication data and update login status subject
+    // Observable of token
+    this.token$ = of(authResult.accessToken);
+
+    const userProfile = authResult.idTokenPayload;
+    // Emit value for user data subject
+    this.userProfile$.next(userProfile);
+    // save userProfile in localStorage
+    localStorage.setItem(this._userProfileFlag, JSON.stringify(userProfile));
+
+    // Set flag in local storage stating this app is logged in
+    localStorage.setItem(this._authFlag, JSON.stringify(true));
   }
 
-  public login(): void {
-    this.auth0.authorize();
+  get authenticated(): boolean {
+    return JSON.parse(localStorage.getItem(this._authFlag));
   }
 
-  public handleAuthentication(): void {
-    this.auth0.parseHash((err, authResult) => {
-      if (authResult && authResult.accessToken && authResult.idToken) {
-        window.location.hash = '';
-        this.localLogin(authResult);
-      } else if (err) {
-        console.log(err);
-      }
-    });
+  renewAuth() {
+    if (this.authenticated) {
+      this.checkSession$({}).subscribe({
+        next: authResult => this._setAuth(authResult),
+        error: err => {
+          localStorage.removeItem(this._authFlag);
+          localStorage.removeItem(this._userProfileFlag);
+          this.router.navigate([this.onAuthFailureUrl]);
+        }
+      });
+    }
   }
 
-  private localLogin(authResult): void {
-    // Set the time that the access token will expire at
-    const expiresAt = (authResult.expiresIn * 1000) + Date.now();
-    this._accessToken = authResult.accessToken;
-    this._idToken = authResult.idToken;
-    this._expiresAt = expiresAt;
-  }
+  logout = () => {
+    // Set authentication status flag in local storage to false
+    localStorage.setItem(this._authFlag, JSON.stringify(false));
+    // remove the userProfile data
+    localStorage.removeItem(this._userProfileFlag);
 
-  public renewTokens(): void {
-    this.auth0.checkSession({}, (err, authResult) => {
-      if (authResult && authResult.accessToken && authResult.idToken) {
-        this.localLogin(authResult);
-      } else if (err) {
-        alert(`Could not get a new token (${err.error}: ${err.error_description}).`);
-        this.logout();
-      }
-    });
-  }
-
-  public logout(): void {
-    // Remove tokens and expiry time
-    this._accessToken = '';
-    this._idToken = '';
-    this._expiresAt = 0;
+    // This does a refresh and redirects back to homepage
+    // Make sure you have the logout URL in your Auth0
+    // Dashboard Application settings in Allowed Logout URLs
     this.auth0.logout({
-      return_to: '/'
+      returnTo: this.logoutUrl,
+      clientID: environment.auth0.clientID
     });
-  }
+  };
 
-  public isAuthenticated(): boolean {
-    // Check whether the current time is past the
-    // access token's expiry time
-    const currentDate =  Date.now();
-    return this._accessToken && currentDate < this._expiresAt;
-  }
+  // Utility functions
+
+  private _handleError = err => {
+    if (err.error_description) {
+      console.error(`Error: ${err.error_description}`);
+    } else {
+      console.error(`Error: ${JSON.stringify(err)}`);
+    }
+  };
 }
