@@ -1,8 +1,17 @@
-# Running the prototype
+# What this app is for?
 
-* `git clone` this repo.
+It is an audio player app. It allows user to play, pause the audio track. Also, user can play next or previous track. In addition to that, user can change the current playing time using a seekbar.
+
+# Running the prototype
+Follow the steps to run the application:
+
+* `git clone` this repo
 * `cd auth0-audio` and `npm install`
 * run `npm start`
+* open browser on `http://localhost:4200/`
+* login in the app and you will see the tracks to play
+* click on any track and it will start playing
+* in the bottom bar, you will see buttons to play/pause, next or previous track and a seekbar to change the time.
 
 # Introduction (Outline)
 
